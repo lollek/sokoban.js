@@ -774,7 +774,7 @@ var TILE_SIZE = 20;
 var gCanvasContext;
 var gMap;
 var gPlayerPos;
-var gLevelNumber;
+var gLevelNumber = 0;
 
 /* newGame destroys the old level and creates a new one */
 function newGame(level) {
@@ -807,6 +807,11 @@ function newGame(level) {
     }
     gMap.push(tmparr);
   }
+
+  /* Write down the level number */
+  gCanvasContext.fillText(
+      "Level: " + (gLevelNumber + 1) + " (press space to reset level)", 
+      0, CANVAS_HEIGHT-TILE_SIZE -5);
 }
 
 /* Handle events */
@@ -822,6 +827,8 @@ function handleEvent(event) {
       var dx = 0, dy = -1; break;
     case 100: case 108: /* d/l -> moveRight */ 
       var dx = 1; dy = 0; break;
+    case 32: /* space -> resetLevel */
+      newGame(gLevelNumber); break;
     default: return; break;
   }
 
@@ -914,14 +921,11 @@ function handleEvent(event) {
         gMap[crateY][crateX] = 3; 
         gCanvasContext.fillText('*', crateTileX, crateTileY);
 
-        /* Check if player has won */
+        /* If the player has won: load next level */
         for (var i = 0; i < gMap.length; i++) 
           for (var j = 0; j < gMap[i].length; j++) 
             if (gMap[i][j] == 2) return;
-
-        /* Go to new page: */
-        if (gLevelNumber == "random") newGame(gLevelNumber);
-        else window.location.href = "index.html?level=" + ++gLevelNumber;
+        newGame(++gLevelNumber);
         break;
     }
   }
@@ -939,13 +943,6 @@ function handleEvent(event) {
 
 function initMain(canvasName) {
 
-  /* index.html -> index.html?level=0
-   * index.html?level=random -> random */
-  var level = window.location.search;
-  if (level.length >= 8 && level.substring(0,7) == "?level=") 
-    level = level.substring(7);
-  else level = 0;
-
   var canvas = document.getElementById(canvasName);
   canvas.width = CANVAS_WIDTH
   canvas.height = CANVAS_HEIGHT
@@ -954,7 +951,6 @@ function initMain(canvasName) {
   gCanvasContext.font = "bold " + TILE_SIZE + "px sans-serif";
   gCanvasContext.textBaseline = "top";
 
-  gLevelNumber = parseInt(level, 10);
   newGame(gLevelNumber);
 }
 
