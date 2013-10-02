@@ -826,78 +826,118 @@ function handleEvent(event) {
   }
 
   /* Remove player from old position and add to new */
-  function redraw_player(dx, dy) {
+  function move_player(dx, dy) {
 
-    /* undraw */
+    /* First check if it's possible to move crate */
+    if (gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] != 0 &&
+        gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] != 6)
+      return;
+
+    /* Undraw player */
+    var playerX = gPlayerPos[0] * TILE_SIZE;
+    var playerY = gPlayerPos[1] * TILE_SIZE;
+
     gCanvasContext.fillStyle = "white";
-    gCanvasContext.fillRect(gPlayerPos[0]*TILE_SIZE, gPlayerPos[1]*TILE_SIZE, 
-                            TILE_SIZE, TILE_SIZE + 5);
-    if (gMap[gPlayerPos[1]][gPlayerPos[0]] == 4) {
-      gMap[gPlayerPos[1]][gPlayerPos[0]] = 0;
-    } else {
-      gMap[gPlayerPos[1]][gPlayerPos[0]] = 6;
-      gCanvasContext.fillStyle = "black";
-      gCanvasContext.fillText('.', gPlayerPos[0]*TILE_SIZE, 
-                                   gPlayerPos[1]*TILE_SIZE);
+    gCanvasContext.fillRect(playerX, playerY, TILE_SIZE, TILE_SIZE + 5);
+
+    switch (gMap[gPlayerPos[1]][gPlayerPos[0]]) {
+      case 4: 
+        gMap[gPlayerPos[1]][gPlayerPos[0]] = 0; 
+        break;
+      case 5:
+        gMap[gPlayerPos[1]][gPlayerPos[0]] = 6;
+        gCanvasContext.fillStyle = "black";
+        gCanvasContext.fillText('.', playerX, playerY);
+        break;
     }
-    /* redraw */
+
+    /* Move player */
     gPlayerPos[0] += dx;
     gPlayerPos[1] += dy;
+
+    /* Draw player */
+    var playerX = gPlayerPos[0] * TILE_SIZE;
+    var playerY = gPlayerPos[1] * TILE_SIZE;
+
     gCanvasContext.fillStyle = "white";
-    gCanvasContext.fillRect(gPlayerPos[0]*TILE_SIZE, gPlayerPos[1]*TILE_SIZE, 
-                            TILE_SIZE, TILE_SIZE + 5);
+    gCanvasContext.fillRect(playerX, playerY, TILE_SIZE, TILE_SIZE + 5);
+
     gCanvasContext.fillStyle = "black";
-    if (gMap[gPlayerPos[1]][gPlayerPos[0]] == 0) {
-      gMap[gPlayerPos[1]][gPlayerPos[0]] = 4;
-      gCanvasContext.fillText('@', gPlayerPos[0]*TILE_SIZE, 
-                                   gPlayerPos[1]*TILE_SIZE);
-    } else {
-      gMap[gPlayerPos[1]][gPlayerPos[0]] = 5;
-      gCanvasContext.fillText('+', gPlayerPos[0]*TILE_SIZE, 
-                                   gPlayerPos[1]*TILE_SIZE);
+    switch (gMap[gPlayerPos[1]][gPlayerPos[0]]) {
+      case 0:
+        gMap[gPlayerPos[1]][gPlayerPos[0]] = 4;
+        gCanvasContext.fillText('@', playerX, playerY);
+        break;
+      case 6:
+        gMap[gPlayerPos[1]][gPlayerPos[0]] = 5;
+        gCanvasContext.fillText('+', playerX, playerY);
+        break;
+    }
+  }
+
+  function move_crate(dx, dy) {
+
+    /* First check if it's possible to move crate */
+    if (gMap[gPlayerPos[1] + dy*2][gPlayerPos[0] + dx*2] != 0 &&
+        gMap[gPlayerPos[1] + dy*2][gPlayerPos[0] + dx*2] != 6)
+      return;
+    
+    /* Remove crate */
+    var crateX = gPlayerPos[0] + dx;
+    var crateY = gPlayerPos[1] + dy;
+    var crateTileX = crateX * TILE_SIZE;
+    var crateTileY = crateY * TILE_SIZE;
+
+    gCanvasContext.fillStyle = "white";
+    gCanvasContext.fillRect(crateTileX, crateTileY, TILE_SIZE, TILE_SIZE + 5);
+
+    switch (gMap[crateY][crateX]) {
+      case 2: gMap[crateY][crateX] = 0; break;
+      case 3: gMap[crateY][crateX] = 6; break;
+    }
+
+    /* Move crate */
+    crateX += dx;
+    crateY += dy;
+    crateTileX = crateX * TILE_SIZE;
+    crateTileY = crateY * TILE_SIZE;
+
+    gCanvasContext.fillRect(crateTileX, crateTileY, TILE_SIZE, TILE_SIZE + 5);
+
+    gCanvasContext.fillStyle = "black";
+    switch (gMap[crateY][crateX]) {
+      case 0: 
+        gMap[crateY][crateX] = 2; 
+        gCanvasContext.fillText('o', crateTileX, crateTileY);
+        break;
+      case 6: 
+        gMap[crateY][crateX] = 3; 
+        gCanvasContext.fillText('*', crateTileX, crateTileY);
+
+        /* Check if player has won */
+        for (var i = 0; i < gMap.length; i++) 
+          for (var j = 0; j < gMap[i].length; j++) 
+            if (gMap[i][j] == 2) return;
+
+        /* Go to new page: */
+        if (gLevelNumber == "random") newGame(gLevelNumber);
+        else window.location.href = "index.html?level=" + ++gLevelNumber;
+        break;
     }
   }
 
   switch (gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx]) {
-    case 0: redraw_player(dx, dy); break; /* Open ground */
-    case 1: return; break; /* Wall */
-    case 2: var current = 2;/* Stone */
+    case 0: /* Open ground */ 
+      move_player(dx, dy); 
+      break;
+    case 2: /* Stone */
     case 3: /* Stone in place */
-      switch (gMap[gPlayerPos[1] + (2*dy)][gPlayerPos[0] + (2*dx)]) {
-        case 0: /* Empty space */
-          gMap[gPlayerPos[1] + (2*dy)][gPlayerPos[0] + (2*dx)] = 2;
-          gCanvasContext.fillStyle = "black";
-          gCanvasContext.fillText('o', (gPlayerPos[0] + (2*dx)) * TILE_SIZE, 
-                                       (gPlayerPos[1] + (2*dy)) * TILE_SIZE);
-          if (current == 2) gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] = 0;
-          else gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] = 6;
-          redraw_player(dx, dy);
-          break;
-        case 6: /* Socket */
-          gMap[gPlayerPos[1] + (2*dy)][gPlayerPos[0] + (2*dx)] = 3;
-          gCanvasContext.fillStyle = "white";
-          gCanvasContext.fillRect((gPlayerPos[0] + (2*dx)) * TILE_SIZE, 
-                                  (gPlayerPos[1] + (2*dy)) * TILE_SIZE, 
-                                  TILE_SIZE, TILE_SIZE + 5);
-          gCanvasContext.fillStyle = "black";
-          gCanvasContext.fillText('*', (gPlayerPos[0] + (2*dx)) * TILE_SIZE, 
-                                       (gPlayerPos[1] + (2*dy)) * TILE_SIZE);
-          if (current == 2) gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] = 0;
-          else gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] = 6;
-          redraw_player(dx, dy);
-
-          /* Check if player has won */
-          for (var i = 0; i < gMap.length; i++) 
-            for (var j = 0; j < gMap[i].length; j++) 
-              if (gMap[i][j] == 2) return;
-
-          /* Go to new page: */
-          if (gLevelNumber == "random") newGame(gLevelNumber);
-          else window.location.href = "index.html?level=" + ++gLevelNumber;
-
-          break;
-      } break;
-    case 6: redraw_player(dx, dy); break; /* Socket */
+      move_crate(dx, dy);
+      move_player(dx, dy);
+      break;
+    case 6: /* Socket */ 
+      move_player(dx, dy); 
+      break;
   }
 }
 
