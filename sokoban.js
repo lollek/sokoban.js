@@ -927,17 +927,13 @@ function handleEvent(event) {
   }
 
   switch (gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx]) {
-    case 0: /* Open ground */ 
-      move_player(dx, dy); 
-      break;
-    case 2: /* Stone */
-    case 3: /* Stone in place */
-      move_crate(dx, dy);
-      move_player(dx, dy);
-      break;
-    case 6: /* Socket */ 
-      move_player(dx, dy); 
-      break;
+    /* Open ground */ 
+    case 0: move_player(dx, dy); break;
+    /* Stone */
+    /* Stone in place */ 
+    case 2: case 3: move_crate(dx, dy); move_player(dx, dy); break;
+    /* Socket */ 
+    case 6: move_player(dx, dy); break;
   }
 }
 
