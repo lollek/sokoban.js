@@ -2,17 +2,17 @@
  * Date: 2013-10-01 */
 
 /* Maps: */
-var gRawMaps = [["    #####"
-                ,"    #   #"
-                ,"    #o  #"
-                ,"  ###  o##"
-                ,"  #  o o #"
-                ,"### # ## #   ######"
+var gRawMaps = [["xxxx#####"
+                ,"xxxx#   #"
+                ,"xxxx#o  #"
+                ,"xx###  o##"
+                ,"xx#  o o #"
+                ,"### # ## #xxx######"
                 ,"#   # ## #####  ..#"
                 ,"# o  o          ..#"
                 ,"##### ### #@##  ..#"
-                ,"    #     #########"
-                ,"    #######"
+                ,"xxxx#     #########"
+                ,"xxxx#######"
                 ],
                 ["############"
                 ,"#..  #     ###"
@@ -21,23 +21,23 @@ var gRawMaps = [["    #####"
                 ,"#..    @ ##  #"
                 ,"#..  # #  o ##"
                 ,"###### ##o o #"
-                ,"  # o  o o o #"
-                ,"  #    #     #"
-                ,"  ############"
+                ,"xx# o  o o o #"
+                ,"xx#    #     #"
+                ,"xx############"
                 ],
-                ["        ########"
-                ,"        #     @#"
-                ,"        # o#o ##"
-                ,"        # o  o#"
-                ,"        ##o o #"
+                ["xxxxxxxx########"
+                ,"xxxxxxxx#     @#"
+                ,"xxxxxxxx# o#o ##"
+                ,"xxxxxxxx# o  o#"
+                ,"xxxxxxxx##o o #"
                 ,"######### o # ###"
                 ,"#....  ## o  o  #"
                 ,"##...    o  o   #"
                 ,"#....  ##########"
                 ,"########"
                 ],
-                ["           ########"
-                ,"           #  ....#"
+                ["xxxxxxxxxxx########"
+                ,"xxxxxxxxxxx#  ....#"
                 ,"############  ....#"
                 ,"#    #  o o   ....#"
                 ,"# ooo#o  o #  ....#"
@@ -51,34 +51,34 @@ var gRawMaps = [["    #####"
                 ,"#    #    ##"
                 ,"###########"
                 ],
-                ["        #####"
-                ,"        #   #####"
-                ,"        # #o##  #"
-                ,"        #     o #"
+                ["xxxxxxxx#####"
+                ,"xxxxxxxx#   #####"
+                ,"xxxxxxxx# #o##  #"
+                ,"xxxxxxxx#     o #"
                 ,"######### ###   #"
                 ,"#....  ## o  o###"
                 ,"#....    o oo ##"
                 ,"#....  ##o  o @#"
                 ,"#########  o  ##"
-                ,"        # o o  #"
-                ,"        ### ## #"
-                ,"          #    #"
-                ,"          ######"
+                ,"xxxxxxxx# o o  #"
+                ,"xxxxxxxx### ## #"
+                ,"xxxxxxxxxx#    #"
+                ,"xxxxxxxxxx######"
                 ],
-                ["######  ###"
-                ,"#..  # ##@##"
+                ["######xx###"
+                ,"#..  #x##@##"
                 ,"#..  ###   #"
                 ,"#..     oo #"
                 ,"#..  # # o #"
                 ,"#..### # o #"
                 ,"#### o #o  #"
-                ,"   #  o# o #"
-                ,"   # o  o  #"
-                ,"   #  ##   #"
-                ,"   #########"
+                ,"xxx#  o# o #"
+                ,"xxx# o  o  #"
+                ,"xxx#  ##   #"
+                ,"xxx#########"
                 ],
-                ["       #####"
-                ," #######   ##"
+                ["xxxxxxx#####"
+                ,"x#######   ##"
                 ,"## # @## oo #"
                 ,"#    o      #"
                 ,"#  o  ###   #"
@@ -90,37 +90,37 @@ var gRawMaps = [["    #####"
                 ,"#  ### #####"
                 ,"####"
                 ],
-                ["  ####"
-                ,"  #  ###########"
-                ,"  #    o   o o #"
-                ,"  # o# o #  o  #"
-                ,"  #  o o  #    #"
+                ["xx####"
+                ,"xx#  ###########"
+                ,"xx#    o   o o #"
+                ,"xx# o# o #  o  #"
+                ,"xx#  o o  #    #"
                 ,"### o# #  #### #"
                 ,"#@#o o o  ##   #"
                 ,"#    o #o#   # #"
                 ,"#   o    o o o #"
                 ,"#####  #########"
-                ,"  #      #"
-                ,"  #      #"
-                ,"  #......#"
-                ,"  #......#"
-                ,"  #......#"
-                ,"  ########"
+                ,"xx#      #"
+                ,"xx#      #"
+                ,"xx#......#"
+                ,"xx#......#"
+                ,"xx#......#"
+                ,"xx########"
                 ],
-                ["          #######"
-                ,"          #  ...#"
-                ,"      #####  ...#"
-                ,"      #      . .#"
-                ,"      #  ##  ...#"
-                ,"      ## ##  ...#"
-                ,"     ### ########"
-                ,"     # ooo ##"
-                ," #####  o o #####"
+                ["xxxxxxxxxx#######"
+                ,"xxxxxxxxxx#  ...#"
+                ,"xxxxxx#####  ...#"
+                ,"xxxxxx#      . .#"
+                ,"xxxxxx#  ##  ...#"
+                ,"xxxxxx## ##  ...#"
+                ,"xxxxx### ########"
+                ,"xxxxx# ooo ##"
+                ,"x#####  o o #####"
                 ,"##   #o o   #   #"
                 ,"#@ o  o    o  o #"
                 ,"###### oo o #####"
-                ,"     #      #"
-                ,"     ########"
+                ,"xxxxx#      #"
+                ,"xxxxx########"
                 ],
                 [" ###  #############"
                 ,"##@####       #   #"
@@ -786,15 +786,8 @@ function newGame(level) {
   /* thisMap will be the level to load */
   thisMap = gRawMaps[level];
 
-  /* Clear gMap and canvas: */
-  for (var i = 0; i < CANVAS_WIDTH / TILE_SIZE; i++)
-    for (var j = 0; j < CANVAS_HEIGHT / TILE_SIZE; j++)
-      gCanvasContext.drawImage(gImage,
-          0, 0, TILE_SIZE, TILE_SIZE,
-          i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-
-  //gCanvasContext.fillStyle = "white";
-  //gCanvasContext.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  gCanvasContext.fillStyle = "grey";
+  gCanvasContext.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   gMap = [];
 
   /* Create new gMap and draw it to screen */
@@ -809,11 +802,13 @@ function newGame(level) {
         case '@': token = 4; gPlayerPos = [j, i]; break;
         case '+': token = 5; break;
         case '.': token = 6; break;
+        case 'x': token = 9; break; // This is a special char made to be insivible
       }
       tmparr.push(token);
-      gCanvasContext.drawImage(gImage,
-          token * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
-          j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      if (token != 9)
+        gCanvasContext.drawImage(gImage,
+            token * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+            j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
     gMap.push(tmparr);
   }
