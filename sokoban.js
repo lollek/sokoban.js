@@ -775,6 +775,7 @@ var gCanvasContext;
 var gMap;
 var gPlayerPos;
 var gLevelNumber = 0;
+var gImage;
 
 /* newGame destroys the old level and creates a new one */
 function newGame(level) {
@@ -786,29 +787,39 @@ function newGame(level) {
   thisMap = gRawMaps[level];
 
   /* Clear gMap and canvas: */
-  gCanvasContext.fillStyle = "white";
-  gCanvasContext.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  for (var i = 0; i < CANVAS_WIDTH / TILE_SIZE; i++)
+    for (var j = 0; j < CANVAS_HEIGHT / TILE_SIZE; j++)
+      gCanvasContext.drawImage(gImage,
+          0, 0, TILE_SIZE, TILE_SIZE,
+          i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+  //gCanvasContext.fillStyle = "white";
+  //gCanvasContext.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   gMap = [];
 
   /* Create new gMap and draw it to screen */
-  gCanvasContext.fillStyle = "black";
+  var token;
   for (var i = 0; i < thisMap.length; i++) {
     for (var j = 0, tmparr = []; j < thisMap[i].length; j++) {
       switch (thisMap[i][j]) {
-        case ' ': tmparr.push(0); break;
-        case '#': tmparr.push(1); break;
-        case 'o': tmparr.push(2); break;
-        case '*': tmparr.push(3); break;
-        case '@': tmparr.push(4); gPlayerPos = [j, i]; break;
-        case '+': tmparr.push(5); break;
-        case '.': tmparr.push(6); break;
+        case ' ': token = 0; break;
+        case '#': token = 1; break;
+        case 'o': token = 2; break;
+        case '*': token = 3; break;
+        case '@': token = 4; gPlayerPos = [j, i]; break;
+        case '+': token = 5; break;
+        case '.': token = 6; break;
       }
-      gCanvasContext.fillText(thisMap[i][j], j*TILE_SIZE, i*TILE_SIZE);
+      tmparr.push(token);
+      gCanvasContext.drawImage(gImage,
+          token * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+          j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
     gMap.push(tmparr);
   }
 
   /* Write down the level number */
+  gCanvasContext.fillStyle = "black";
   gCanvasContext.fillText(
       "Level: " + (gLevelNumber + 1) + " (press space to reset level)", 
       0, CANVAS_HEIGHT-TILE_SIZE -5);
@@ -828,7 +839,7 @@ function handleEvent(event) {
     case 100: case 108: /* d/l -> moveRight */ 
       var dx = 1; dy = 0; break;
     case 32: /* space -> resetLevel */
-      newGame(gLevelNumber); break;
+      newGame(gLevelNumber); return; break;
     default: return; break;
   }
 
@@ -840,46 +851,40 @@ function handleEvent(event) {
         gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] != 6)
       return;
 
-    /* Undraw player */
+    /* Fetch  player position */
     var playerX = gPlayerPos[0] * TILE_SIZE;
     var playerY = gPlayerPos[1] * TILE_SIZE;
 
-    gCanvasContext.fillStyle = "white";
-    gCanvasContext.fillRect(playerX, playerY, TILE_SIZE, TILE_SIZE + 5);
-
+    /* Fetch wall image to draw with */
     switch (gMap[gPlayerPos[1]][gPlayerPos[0]]) {
-      case 4: 
-        gMap[gPlayerPos[1]][gPlayerPos[0]] = 0; 
-        break;
-      case 5:
-        gMap[gPlayerPos[1]][gPlayerPos[0]] = 6;
-        gCanvasContext.fillStyle = "black";
-        gCanvasContext.fillText('.', playerX, playerY);
-        break;
+      case 4: var newValue = 0; break;
+      case 5: var newValue = 6; break;
     }
+
+    /* Draw image */
+    gCanvasContext.drawImage(gImage,
+        newValue * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+        playerX, playerY, TILE_SIZE, TILE_SIZE);
+        gMap[gPlayerPos[1]][gPlayerPos[0]] = newValue; 
 
     /* Move player */
     gPlayerPos[0] += dx;
     gPlayerPos[1] += dy;
 
-    /* Draw player */
+    /* Fetch new position */
     var playerX = gPlayerPos[0] * TILE_SIZE;
     var playerY = gPlayerPos[1] * TILE_SIZE;
 
-    gCanvasContext.fillStyle = "white";
-    gCanvasContext.fillRect(playerX, playerY, TILE_SIZE, TILE_SIZE + 5);
-
-    gCanvasContext.fillStyle = "black";
+    /* Fetch player image to draw */
     switch (gMap[gPlayerPos[1]][gPlayerPos[0]]) {
-      case 0:
-        gMap[gPlayerPos[1]][gPlayerPos[0]] = 4;
-        gCanvasContext.fillText('@', playerX, playerY);
-        break;
-      case 6:
-        gMap[gPlayerPos[1]][gPlayerPos[0]] = 5;
-        gCanvasContext.fillText('+', playerX, playerY);
-        break;
+      case 0: newValue = 4; break;
+      case 6: newValue = 5; break;
     }
+    /* Draw Image */
+    gMap[gPlayerPos[1]][gPlayerPos[0]] = newValue;
+    gCanvasContext.drawImage(gImage,
+        newValue * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+        playerX, playerY, TILE_SIZE, TILE_SIZE);
   }
 
   function move_crate(dx, dy) {
@@ -895,9 +900,7 @@ function handleEvent(event) {
     var crateTileX = crateX * TILE_SIZE;
     var crateTileY = crateY * TILE_SIZE;
 
-    gCanvasContext.fillStyle = "white";
-    gCanvasContext.fillRect(crateTileX, crateTileY, TILE_SIZE, TILE_SIZE + 5);
-
+    /* Change move-from position */
     switch (gMap[crateY][crateX]) {
       case 2: gMap[crateY][crateX] = 0; break;
       case 3: gMap[crateY][crateX] = 6; break;
@@ -909,24 +912,22 @@ function handleEvent(event) {
     crateTileX = crateX * TILE_SIZE;
     crateTileY = crateY * TILE_SIZE;
 
-    gCanvasContext.fillRect(crateTileX, crateTileY, TILE_SIZE, TILE_SIZE + 5);
-
-    gCanvasContext.fillStyle = "black";
     switch (gMap[crateY][crateX]) {
-      case 0: 
-        gMap[crateY][crateX] = 2; 
-        gCanvasContext.fillText('o', crateTileX, crateTileY);
-        break;
-      case 6: 
-        gMap[crateY][crateX] = 3; 
-        gCanvasContext.fillText('*', crateTileX, crateTileY);
+      case 0: var newValue = 2; break;
+      case 6: var newValue = 3; break;
+    }
 
+    gMap[crateY][crateX] = newValue; 
+    gCanvasContext.drawImage(gImage,
+        newValue * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
+        crateTileX, crateTileY, TILE_SIZE, TILE_SIZE);
+
+    if (newValue == 3) {
         /* If the player has won: load next level */
         for (var i = 0; i < gMap.length; i++) 
           for (var j = 0; j < gMap[i].length; j++) 
             if (gMap[i][j] == 2) return;
         newGame(++gLevelNumber);
-        break;
     }
   }
 
@@ -943,14 +944,20 @@ function handleEvent(event) {
 
 function initMain(canvasName) {
 
-  var canvas = document.getElementById(canvasName);
-  canvas.width = CANVAS_WIDTH
-  canvas.height = CANVAS_HEIGHT
-  canvas.addEventListener("keypress", handleEvent, false);
-  gCanvasContext = canvas.getContext("2d");
-  gCanvasContext.font = "bold " + TILE_SIZE + "px sans-serif";
-  gCanvasContext.textBaseline = "top";
+  /* Load Image first */
+  gImage = new Image();
+  gImage.src = "tiles.png";
+  gImage.onload = function () {
+
+    var canvas = document.getElementById(canvasName);
+    canvas.width = CANVAS_WIDTH
+    canvas.height = CANVAS_HEIGHT
+    canvas.addEventListener("keypress", handleEvent, false);
+    gCanvasContext = canvas.getContext("2d");
+    gCanvasContext.font = "bold " + TILE_SIZE + "px sans-serif";
+    gCanvasContext.textBaseline = "top";
 
   newGame(gLevelNumber);
+  }
 }
 
