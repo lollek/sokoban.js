@@ -948,6 +948,7 @@ function initMain(canvasName) {
     canvas.width = CANVAS_WIDTH
     canvas.height = CANVAS_HEIGHT
     canvas.addEventListener("keypress", handleEvent, false);
+    canvas.focus();
     gCanvasContext = canvas.getContext("2d");
     gCanvasContext.font = "bold " + TILE_SIZE + "px sans-serif";
     gCanvasContext.textBaseline = "top";
