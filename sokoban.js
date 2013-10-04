@@ -36,7 +36,7 @@
       this.newGame;
     }
 
-    Sokoban.prototype.handleEvent = event(function() {
+    Sokoban.prototype.handleEvent = function(event) {
       var dx, dy;
       switch (event.keyCode) {
         case 97:
@@ -75,7 +75,7 @@
         case 6:
           return this.moveObject(dy(dx("player")));
       }
-    });
+    };
 
     Sokoban.prototype.drawTile = function(y, x, token) {
       if (token == null) {

@@ -787,7 +787,7 @@ class Sokoban
       @canvasContext.textBaseline = "top"
     @newGame
 
-  handleEvent: event ->
+  handleEvent: (event) ->
     switch event.keyCode
       when 97, 104 # a/h - move left
         dy = 0
