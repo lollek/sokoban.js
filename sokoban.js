@@ -771,53 +771,121 @@ var CANVAS_HEIGHT = 400;
 var TILE_SIZE = 20;
 
 /* Mutable things: */
-var gCanvasContext;
-var gMap;
-var gPlayerPos;
-var gLevelNumber = 0;
-var gImage;
+var gCanvasContext;   /* Canvas 2d context */
+var gMap;             /* Game map, gMap[y][x] == wall/player, etc */
+var gPlayerPos;       /* Position of player in gMap, [y,x] */
+var gLevelNumber = 0; /* Current level 0-gRawMaps.length-1 */
+var gImage;           /* .png image to blit from */
 
-/* newGame destroys the old level and creates a new one */
+/** redrawTile
+ * This functions draw a tile to the canvas. It can be called as:
+ * redrawTile(14, 3), which will draw gMap[14][3] to canvas
+ * redrawTile(14, 3, 4), which will draw a player symbol to gMap[14][3] */
+function redrawTile(y, x, token) {
+  gCanvasContext.drawImage(gImage,
+    arguments.length == 2 ? gMap[y][x] * TILE_SIZE : token * TILE_SIZE, 0, 
+    TILE_SIZE, TILE_SIZE, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+}
+
+/** newGame 
+ * Creates a new level (and destroys previous if existing
+ * level should be between  0 - gRawMaps.length-1 or "random" */
 function newGame(level) {
 
-  /* If level is null, pick a random level */
-  if (level == "random") level = Math.floor(Math.random() * gRawMaps.length);
-
-  /* thisMap will be the level to load */
+  /* Set thisMap to the map in gRawMaps that we want to load */
+  if (level == "random") 
+    level = Math.floor(Math.random() * gRawMaps.length);
   thisMap = gRawMaps[level];
 
+  /* Fill the canvas with grey paint and clear gMap */
   gCanvasContext.fillStyle = "grey";
   gCanvasContext.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   gMap = [];
 
   /* Create new gMap and draw it to screen */
-  var token;
-  for (var i = 0; i < thisMap.length; i++) {
-    for (var j = 0, tmparr = []; j < thisMap[i].length; j++) {
-      switch (thisMap[i][j]) {
-        case ' ': token = 0; break;
-        case '#': token = 1; break;
-        case 'o': token = 2; break;
-        case '*': token = 3; break;
-        case '@': token = 4; gPlayerPos = [j, i]; break;
-        case '+': token = 5; break;
-        case '.': token = 6; break;
-        case 'x': token = 9; break; // This is a special char made to be insivible
+  var token, tmparr = [];
+  for (var y = 0; y < thisMap.length; y++) {
+    for (var x = 0; x < thisMap[y].length; x++) {
+      switch (thisMap[y][x]) {
+        case ' ': token = 0; break; /* FLOOR */
+        case '#': token = 1; break; /* WALL */
+        case 'o': token = 2; break; /* BOX */
+        case '*': token = 3; break; /* BOX IN SOCKET */
+        case '@': token = 4; gPlayerPos = [y, x]; break; /* PLAYER */
+        case '+': token = 5; break; /* PLAYER IN SOCKET */
+        case '.': token = 6; break; /* SOCKET */
+        case 'x': token = 9; break; /* INVISIBLE FLOOR */ 
       }
       tmparr.push(token);
       if (token != 9)
-        gCanvasContext.drawImage(gImage,
-            token * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
-            j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        redrawTile(y, x, token);
     }
     gMap.push(tmparr);
+    tmparr = [];
   }
 
-  /* Write down the level number */
+  /* Write the level number */
   gCanvasContext.fillStyle = "black";
   gCanvasContext.fillText(
       "Level: " + (gLevelNumber + 1) + " (press space to reset level)", 
       0, CANVAS_HEIGHT-TILE_SIZE -5);
+}
+
+/* Move player or crate */
+function moveObject(dy, dx, objectType) {
+
+  /* Set objY/objX to player's */
+  var objY = gPlayerPos[0];
+  var objX = gPlayerPos[1];
+
+  /* If object is in fact a crate instead of player, 
+   * add dy/dx to get its position*/
+  if (objectType == "crate") {
+    objY += dy;
+    objX += dx;
+  }
+
+  /* If the target tile is blocked - return */
+  switch (gMap[objY + dy][objX + dx]) {
+    case 1: case 2: case 3: case 4: case 5: return; break;
+  }
+
+  /* Remove object from old tile */
+  switch(gMap[objY][objX]) {
+    case 2: case 4: gMap[objY][objX] = 0; break;
+    case 3: case 5: gMap[objY][objX] = 6; break;
+  }
+
+  /* Redraw if player 
+   * if it's a crate, the player will soon move there anyways */
+  if (objectType == "player")
+    redrawTile(objY, objX);
+
+  /* Move the object */
+  objY += dy;
+  objX += dx;
+
+  /* Add object to new tile */
+  switch (gMap[objY][objX]) {
+    case 0: gMap[objY][objX] = objectType == "crate" ? 2 : 4; break;
+    case 6: gMap[objY][objX] = objectType == "crate" ? 3 : 5; break;
+  }
+
+  /* Redraw tile */
+  redrawTile(objY, objX);
+
+  /* If object is player, update gPlayerPos */
+  if (objectType == "player")
+    gPlayerPos = [objY, objX];
+
+  /* If object is crate, check if we've won */
+  else if (objectType == "crate")
+    if (gMap[objY][objX] == 3) {
+      for (var y = 0; y < gMap.length; y++)
+        for (var x = 0; x < gMap[y].length; x++)
+          if (gMap[y][x] == 2) return;
+      newGame(++gLevelNumber);
+    }
 }
 
 /* Handle events */
@@ -838,102 +906,17 @@ function handleEvent(event) {
     default: return; break;
   }
 
-  /* Remove player from old position and add to new */
-  function move_player(dx, dy) {
-
-    /* First check if it's possible to move crate */
-    if (gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] != 0 &&
-        gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx] != 6)
-      return;
-
-    /* Fetch  player position */
-    var playerX = gPlayerPos[0] * TILE_SIZE;
-    var playerY = gPlayerPos[1] * TILE_SIZE;
-
-    /* Fetch wall image to draw with */
-    switch (gMap[gPlayerPos[1]][gPlayerPos[0]]) {
-      case 4: var newValue = 0; break;
-      case 5: var newValue = 6; break;
-    }
-
-    /* Draw image */
-    gCanvasContext.drawImage(gImage,
-        newValue * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
-        playerX, playerY, TILE_SIZE, TILE_SIZE);
-        gMap[gPlayerPos[1]][gPlayerPos[0]] = newValue; 
-
-    /* Move player */
-    gPlayerPos[0] += dx;
-    gPlayerPos[1] += dy;
-
-    /* Fetch new position */
-    var playerX = gPlayerPos[0] * TILE_SIZE;
-    var playerY = gPlayerPos[1] * TILE_SIZE;
-
-    /* Fetch player image to draw */
-    switch (gMap[gPlayerPos[1]][gPlayerPos[0]]) {
-      case 0: newValue = 4; break;
-      case 6: newValue = 5; break;
-    }
-    /* Draw Image */
-    gMap[gPlayerPos[1]][gPlayerPos[0]] = newValue;
-    gCanvasContext.drawImage(gImage,
-        newValue * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
-        playerX, playerY, TILE_SIZE, TILE_SIZE);
-  }
-
-  function move_crate(dx, dy) {
-
-    /* First check if it's possible to move crate */
-    if (gMap[gPlayerPos[1] + dy*2][gPlayerPos[0] + dx*2] != 0 &&
-        gMap[gPlayerPos[1] + dy*2][gPlayerPos[0] + dx*2] != 6)
-      return;
-    
-    /* Remove crate */
-    var crateX = gPlayerPos[0] + dx;
-    var crateY = gPlayerPos[1] + dy;
-    var crateTileX = crateX * TILE_SIZE;
-    var crateTileY = crateY * TILE_SIZE;
-
-    /* Change move-from position */
-    switch (gMap[crateY][crateX]) {
-      case 2: gMap[crateY][crateX] = 0; break;
-      case 3: gMap[crateY][crateX] = 6; break;
-    }
-
-    /* Move crate */
-    crateX += dx;
-    crateY += dy;
-    crateTileX = crateX * TILE_SIZE;
-    crateTileY = crateY * TILE_SIZE;
-
-    switch (gMap[crateY][crateX]) {
-      case 0: var newValue = 2; break;
-      case 6: var newValue = 3; break;
-    }
-
-    gMap[crateY][crateX] = newValue; 
-    gCanvasContext.drawImage(gImage,
-        newValue * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE,
-        crateTileX, crateTileY, TILE_SIZE, TILE_SIZE);
-
-    if (newValue == 3) {
-        /* If the player has won: load next level */
-        for (var i = 0; i < gMap.length; i++) 
-          for (var j = 0; j < gMap[i].length; j++) 
-            if (gMap[i][j] == 2) return;
-        newGame(++gLevelNumber);
-    }
-  }
-
-  switch (gMap[gPlayerPos[1] + dy][gPlayerPos[0] + dx]) {
+  switch (gMap[gPlayerPos[0] + dy][gPlayerPos[1] + dx]) {
     /* Open ground */ 
-    case 0: move_player(dx, dy); break;
+    case 0: moveObject(dy, dx, "player"); break;
     /* Stone */
     /* Stone in place */ 
-    case 2: case 3: move_crate(dx, dy); move_player(dx, dy); break;
+    case 2: case 3: 
+      moveObject(dy, dx, "crate"); 
+      moveObject(dy, dx, "player"); 
+      break;
     /* Socket */ 
-    case 6: move_player(dx, dy); break;
+    case 6: moveObject(dy, dx, "player"); break;
   }
 }
 
