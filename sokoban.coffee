@@ -764,169 +764,149 @@ gRawMaps = [["xxxx#####"
             ,"  ####      ######"
             ]]
 
-## redrawTile
-# This functions draw a tile to the canvas. It can be called as:
-# redrawTile(canvas, 14, 3), which will draw map[14][3] to canvas
-# redrawTile(canvas, 14, 3, 4), which will draw a player symbol to map[14][3] 
-redrawTile = (canvas, y, x, token = canvas.map[y][x]) ->
-  canvas.getContext("2d").drawImage(canvas.image, 
-    token * canvas.tilesize, 0, canvas.tilesize, canvas.tilesize, 
-    x * canvas.tilesize, y * canvas.tilesize, canvas.tilesize, canvas.tilesize)
+class Sokoban
+  canvas: null
+  canvasContext: null
+  image: null
+  map: []
+  level: 0
+  playerPos = [-1, -1]
 
-## newGame 
-# Creates a new level (and destroys previous if existing
-# level should be between  0 - gRawMaps.length-1 or "random" 
-newGame =  ->
-  
-  canvas = document.getElementById("sokoban")
-  canvasContext = canvas.getContent("2d")
+  constructor: ->
+    @image = new Image()
+    @image.src = "tiles.png"
+    @image.onload = ->
+      @canvas = document.getElementById "sokoban"
+      @canvas.width = 400
+      @canvas.height = 400
+      @canvas.tilesize = 20
+      @canvas.addEventListener("keypress", @handleEvent, false)
+      @canvas.focus()
+      @canvasContext = @canvas.getContext "2d"
+      @canvasContext.font = "bold " + @canvas.tilesize + "px sans-serif"
+      @canvasContext.textBaseline = "top"
+    @newGame
 
-  # Set thisMap to the map in gRawMaps that we want to load 
-  if canvas.level == "random" 
-    thisMap = gRawMaps[Math.floor(Math.random() * gRawMaps.length)]
-  else
-    thisMap = gRawMaps[canvas.level]
+  handleEvent: event ->
+    switch event.keyCode
+      when 97, 104 # a/h - move left
+        dy = 0
+        dx = -1
+      when 115, 106 # s/j - move down
+        dy = 1
+        dx = 0
+      when 119, 107 # w/k - move up
+        dy = -1
+        dx = 0
+      when 100, 108 # d/l - move right
+        dy = 0
+        dx = 1
+      when 32 # space - reset level
+        @newGame
+      else
+        return
 
-  # clear the canvas with grey paint and clear map 
-  canvasContext.fillStyle = "grey"
-  canvasContext.fillRect(0, 0, canvas.width, canvas.height)
-  canvas.map = []
+    switch @map[playerPos[0] + dy][playerPos[1] + dx]
+      when 0 # Floor
+        @moveObject dy dx "player"
+      when 2, 3 # Crate / crate in socket
+        @moveObject dy dx "crate"
+        @moveObject dy dx "player"
+      when 6 # Socket
+        @moveObject dy dx "player"
 
-  # Create new gMap and draw it to screen 
-  tmparr = []
-  for y in [0...thisMap.length]
-    for x in [0...thisMap[y].length]
-      switch thisMap[y][x] 
-        when ' ' then token = 0 # FLOOR
-        when '#' then token = 1 # WALL 
-        when 'o' then token = 2 # BOX
-        when '*' then token = 3 # BOX IN SOCKET
-        when '@'                # PLAYER 
-          token = 4 
-          gPlayerPos = [y, x]
-        when '+' then token = 5 # PLAYER IN SOCKET
-        when '.' then token = 6 # SOCKET
-        when 'x' then token = 9 # INVISIBLE FLOOR
+  # This function draws a tile to the canvas)
+  # drawTile 14 3 - draw map[14][3] to canvas
+  # drawTile 14 3 4 - draw player char to map[14][3]
+  drawTile: (y, x, token = @map[y][x]) ->
+    @canvasContext.drawImage(@image,
+      token * @canvas.tilesize, 0, @canvas.tilesize, @canvas.tilesize,
+      x * @canvas.tilesize, y * @canvas.tilesize, 
+      @canvas.tilesize, @canvas.tilesize)
       
-      tmparr.push(token);
-      if (token != 9)
-        redrawTile(canvas, y, x, token);
+  # Clear old level and create a new one
+  newGame: ->
+   
+   # Set map to load
+    if @level == "random" 
+      thisMap = gRawMaps[Math.floor(Math.random() * gRawMaps.length)]
+    else
+      thisMap = gRawMaps[@level]
+
+    @canvasContext.fillStyle = "grey"
+    @canvasContext.fillRect(0, 0, @canvas.width, @canvas.height)
+    @map = []
+
+    tmparr = []
+    for y in [0...thisMap.length]
+      for x in [0...thisMap[y].length]
+        switch thisMap[y][x]
+          when ' ' then token = 0 # FLOOR
+          when '#' then token = 1 # WALL 
+          when 'o' then token = 2 # BOX
+          when '*' then token = 3 # BOX IN SOCKET
+          when '@'                # PLAYER 
+            token = 4 
+            gPlayerPos = [y, x]
+          when '+' then token = 5 # PLAYER IN SOCKET
+          when '.' then token = 6 # SOCKET
+          when 'x' then token = 9 # INVISIBLE FLOOR
+        tmparr.push(token)
+        if token != 9
+          @drawTile y x token
+      @map.push(tmparr)
+      tmparr = []
+
+    # Write the level number
+    @canvasContext.fillstyle = "black"
+    @canvasContext.fillText(
+      "Level: " + (@level + 1) + " (press space to reset level)",
+      0, @canvas.height-@canvas.tilesize -5)
+
+  moveObject: (dy, dx, objectType) ->
     
-    gMap.push(tmparr);
-    tmparr = [];
+    # Set objY/objX to player's
+    objY = @playerPos[0]
+    objX = @playerPos[1]
 
-  # Write the level number
-  canvasContext.fillStyle = "black"
-  canvasContext.fillText(
-      "Level: " + (canvas.level + 1) + " (press space to reset level)", 
-      0, canvas.height-canvas.tilesize -5)
+    # if object is in fact a create instead of player, add dy/dx
+    if objectType == "crate"
+      objY += dy
+      objX += dx
 
+    # If the target tile is blocked - return
+    if @map[objY + dy][objX + dx] not in [0, 6] then return
 
-# Move player or crate
-moveObject = (canvas, dy, dx, objectType) ->
+    # Remove object from old tile
+    switch @map[objY][objX]
+      when 2, 4 then @map[objY][objX] = 0
+      when 3, 5 then @map[objY][objX] = 6
 
-  # Set objY/objX to player's
-  objY = canvas.playerPos[0]
-  objX = canvas.playerPos[1]
+    # Redraw if player (if crate, the player will move there soon)
+    if objectType == "player" then @drawTile objY objX
 
-  # If object is in fact a crate instead of player, 
-  # add dy/dx to get its position
-  if objectType == "crate"
-    objY += dy;
-    objX += dx;
+    # Move the object
+    objY += dy
+    objX += dx
 
-  # If the target tile is blocked - return
-  switch canvas.map[objY + dy][objX + dx]
-    when 1, 2, 3, 4, 5 then return
-  
-  # Remove object from old tile
-  switch canvas.map[objY][objX]
-    when 2, 4 then canvas.map[objY][objX] = 0
-    when 3, 5 then canvas.map[objY][objX] = 6
+    # Add object to new tile
+    switch @map[objY][objX] 
+      when 0 
+        @map[objY][objX] = if objectType == "crate" then 2 else 4
+      when 6
+        @map[objY][objX] = if objectType == "crate" then 3 else 5
 
-  # Redraw if player 
-  # if it's a crate, the player will soon move there anyways
-  if objectType == "player"
-    redrawTile(objY, objX);
+    # Draw the tile
+    @drawTile objY objX
 
-  # Move the object
-  objY += dy
-  objX += dx
-
-  # Add object to new tile
-  switch (canvas.map[objY][objX]) 
-    when 0 then canvas.map[objY][objX] = objectType == "crate" ? 2 : 4
-    when 6 then canvas.map[objY][objX] = objectType == "crate" ? 3 : 5
-
-  # Redraw tile
-  redrawTile(objY, objX)
-
-  # If object is player, update gPlayerPos
-  if objectType == "player"
-    gPlayerPos = [objY, objX]
-
-  # If object is crate, check if we've won
-  else if (objectType == "crate")
-    if (canvas.map[objY][objX] == 3) 
-      for y in [0...canvas.map.length]
-        for x in [0...canvas.map[y].length]
-          if canvavs.map[y][x] == 2 
-            return
-      newGame(++canvas.level)
-
-
-# Handle events
-handleEvent = (event) ->
-
-  canvas = document.getElementById("sokoban")
-
-  # Read wasd / hjkl or returns
-  switch event.keyCode
-    when 97, 104 # a/h -> moveLeft 
-      dx = -1
-      dy = 0
-    when 115, 106 # s/j -> moveDown 
-      dx = 0 
-      dy = 1
-    when 119, 107 # w/k -> moveUp
-      dx = 0 
-      dy = -1
-    when 100, 108 # d/l -> moveRight
-      dx = 1 
-      dy = 0
-    when 32 # space -> resetLevel
-      newGame(canvas.map)
-      return
-    else return
-
-  switch canvas.map[gPlayerPos[0] + dy][gPlayerPos[1] + dx]
-    when 0 # Open ground  
-      moveObject(canvas, dy, dx, "player")
-    when 2, 3 # Stone / stone in place
-      moveObject(canvas, dy, dx, "crate")
-      moveObject(canvas, dy, dx, "player") 
-    when 6 # Socket 
-      moveObject(canvas, dy, dx, "player")
-
-
-initMain = (level) ->
-
-  # Load Image first
-  image = new Image()
-  image.src = "tiles.png"
-  image.onload = ->
-
-    canvas = document.getElementById("sokoban")
-    canvas.width = 400
-    canvas.height = 400
-    canvas.tilesize = 20
-    canvas.image = image
-    canvas.level = level
-    canvas.addEventListener("keypress", handleEvent, false)
-    canvas.focus()
-    gCanvasContext = canvas.getContext("2d")
-    gCanvasContext.font = "bold " + TILE_SIZE + "px sans-serif"
-    gCanvasContext.textBaseline = "top"
-
-  newGame(canvas.level)
-
+    # If object is player, update @playerPos
+    if objectType == "player" then @playerPos = [objY, objX]
+    
+    # Otherwise, check if we've won
+    else
+      if @map[objY][objX] == 3
+        for y in [0...@map.length]
+          for x in [0...@map[y].length]
+            if @map[y][x] == 2
+              return
+        @newGame
