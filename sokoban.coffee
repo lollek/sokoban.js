@@ -808,12 +808,12 @@ class Sokoban
 
     switch @map[playerPos[0] + dy][playerPos[1] + dx]
       when 0 # Floor
-        @moveObject dy dx "player"
+        @moveObject(dy, dx, "player")
       when 2, 3 # Crate / crate in socket
-        @moveObject dy dx "crate"
-        @moveObject dy dx "player"
+        @moveObject(dy, dx, "crate")
+        @moveObject(dy, dx, "player")
       when 6 # Socket
-        @moveObject dy dx "player"
+        @moveObject(dy, dx, "player")
 
   # This function draws a tile to the canvas)
   # drawTile 14 3 - draw map[14][3] to canvas
@@ -847,13 +847,13 @@ class Sokoban
           when '*' then token = 3 # BOX IN SOCKET
           when '@'                # PLAYER 
             token = 4 
-            gPlayerPos = [y, x]
+            @playerPos = [y, x]
           when '+' then token = 5 # PLAYER IN SOCKET
           when '.' then token = 6 # SOCKET
           when 'x' then token = 9 # INVISIBLE FLOOR
         tmparr.push(token)
         if token != 9
-          @drawTile y x token
+          @drawTile(y, x, token)
       @map.push(tmparr)
       tmparr = []
 
@@ -883,7 +883,7 @@ class Sokoban
       when 3, 5 then @map[objY][objX] = 6
 
     # Redraw if player (if crate, the player will move there soon)
-    if objectType == "player" then @drawTile objY objX
+    if objectType == "player" then @drawTile(objY, objX)
 
     # Move the object
     objY += dy

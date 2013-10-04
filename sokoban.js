@@ -67,13 +67,13 @@
       }
       switch (this.map[playerPos[0] + dy][playerPos[1] + dx]) {
         case 0:
-          return this.moveObject(dy(dx("player")));
+          return this.moveObject(dy, dx, "player");
         case 2:
         case 3:
-          this.moveObject(dy(dx("crate")));
-          return this.moveObject(dy(dx("player")));
+          this.moveObject(dy, dx, "crate");
+          return this.moveObject(dy, dx, "player");
         case 6:
-          return this.moveObject(dy(dx("player")));
+          return this.moveObject(dy, dx, "player");
       }
     };
 
@@ -85,7 +85,7 @@
     };
 
     Sokoban.prototype.newGame = function() {
-      var gPlayerPos, thisMap, tmparr, token, x, y, _i, _j, _ref, _ref1;
+      var thisMap, tmparr, token, x, y, _i, _j, _ref, _ref1;
       if (this.level === "random") {
         thisMap = gRawMaps[Math.floor(Math.random() * gRawMaps.length)];
       } else {
@@ -112,7 +112,7 @@
               break;
             case '@':
               token = 4;
-              gPlayerPos = [y, x];
+              this.playerPos = [y, x];
               break;
             case '+':
               token = 5;
@@ -125,7 +125,7 @@
           }
           tmparr.push(token);
           if (token !== 9) {
-            this.drawTile(y(x(token)));
+            this.drawTile(y, x, token);
           }
         }
         this.map.push(tmparr);
@@ -156,7 +156,7 @@
           this.map[objY][objX] = 6;
       }
       if (objectType === "player") {
-        this.drawTile(objY(objX));
+        this.drawTile(objY, objX);
       }
       objY += dy;
       objX += dx;
