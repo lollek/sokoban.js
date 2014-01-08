@@ -926,7 +926,7 @@ function initMain(canvasName, imagePath) {
 
   /* Load Image first */
   gImage = new Image();
-  gImage.src = "tiles.png";
+  gImage.src = imagePath;
   gImage.onload = function () {
 
     var canvas = document.getElementById(canvasName);
