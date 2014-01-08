@@ -920,7 +920,9 @@ function handleEvent(event) {
   }
 }
 
-function initMain(canvasName) {
+function initMain(canvasName, imagePath) {
+  if (arguments.length == 1)
+    imagePath = "tiles.png";
 
   /* Load Image first */
   gImage = new Image();
